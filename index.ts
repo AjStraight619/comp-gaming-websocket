@@ -43,6 +43,17 @@ io.on('connection', socket => {
     io.to(roomId).emit('chat message', msg);
   });
 
+  socket.on('typing', (roomId, username) => {
+    console.log(`${username} is typing...`);
+    io.to(roomId).emit('typing', username);
+  });
+
+  socket.on('start timer', (roomId, seconds) => {
+    console.log('Starting timer in room:', roomId);
+    recursiveTimer(seconds, roomId); // Pass roomId to recursiveTimer
+    io.to(roomId).emit('timer started');
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected');
 
@@ -61,3 +72,21 @@ io.on('connection', socket => {
 server.listen(4000, () => {
   console.log('Server is running on http://localhost:4000');
 });
+
+function recursiveTimer(seconds: number, roomId: string) {
+  if (seconds > 0) {
+    console.log(`Time remaining: ${seconds} seconds`);
+
+    // Emit the remaining time to the room
+    io.to(roomId).emit('timer update', seconds);
+
+    // Call recursively every second
+    setTimeout(() => recursiveTimer(seconds - 1, roomId), 1000);
+  } else {
+    console.log('Timer finished!');
+    io.to(roomId).emit('timer update', 0); // Emit final 0 when the timer ends
+    io.to(roomId).emit('timer finished');
+  }
+}
+
+// recursiveTimer(360);
